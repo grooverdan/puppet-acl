@@ -10,7 +10,7 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
   defaultfor :operatingsystem => [:debian, :ubuntu]
 
   def exists?
-    getfacl('-ps', @resource.value(:path))
+    getfacl('-pE', @resource.value(:path))
   end
   
   def set
@@ -32,7 +32,7 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
   def permission
     value = []
     #String#lines would be nice, but we need to support Ruby 1.8.5
-    getfacl('-ps', @resource.value(:path)).split("\n").each do |line|
+    getfacl('-pE', @resource.value(:path)).split("\n").each do |line|
       # Strip comments and blank lines
       if !(line =~ /^#/) and !(line == "")
         value << line
