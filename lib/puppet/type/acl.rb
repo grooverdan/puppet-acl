@@ -1,71 +1,99 @@
 
 Puppet::Type.newtype(:acl) do
-    @doc = "Manage posix acl on files"
+  desc <<-EOT
+     Ensures that a set of ACL permissions are applied to a given file or directory.
 
-    ensurable do
-      newvalue(:present) do
-        provider.set
-      end
+      Example:
 
-      newvalue(:absent) do
-        provider.unset
-      end
+          acl { '/var/www/html':
+            ensure      => present,
+            permission  => [
+              'user::rwx',
+              'group::r-x',
+              'mask::rwx',
+              'other::r--',
+              'default:user::rwx',
+              'default:user:www-data:r-x',
+              'default:group::r-x',
+              'default:mask::rwx',
+              'default:other::r--',
+            ],
+            provider    => posixacl,
+            recursive   => true,
+          }
 
-      newvalue(:purged) do
-        provider.purge
-      end
-    end
+      In this example, Puppet will ensure that the user and group permissions
+      are set recursively on /var/www/html as well as add default permissions 
+      that will apply to new directories and files created under /var/www/html
+  
+    EOT
 
-    newparam(:name) do
-      desc "The file on with the acl applies"
-      isnamevar
-
-    end
-
-    newproperty(:permission, :array_matching => :all) do 
-      desc "Multiple acl permissions"
-
-      def is_to_s(value)
-        if value == :absent or value.include?(:absent)
-          super
-        else
-          value.join(",")
-        end
-      end
-
-      def should_to_s(value)
-        if value == :absent or value.include?(:absent)
-          super
-        else
-          value.join(",")
-        end
-      end
-
-      # TODO munge into normalised form
-      validate do |acl|
-        unless acl =~ /^(d(efault)?:)?((u(ser)?|g(roup)?):[^:]+|((m(ask)?|o(ther)?):?))(:[-rwxX]+|([0-7]{3,4}))$/
-          raise ArgumentError, "%s is not valid acl permission" % acl
-        end
-      end
-    end
-
-    autorequire(:file) do
-      self[:name]
+  ensurable do
+    newvalue(:present) do
+      provider.set
     end
   
-    { :user => 'u(ser)?:', :group => 'g(roup)?:'}.each do |type, regex|
-      if obj = @parameters[:permission]
-        autorequire(type) do
-          val = []
-          obj.each do |value|
-            if value =~ /^(d(efault)?:)?#{regex}([^:]+)/
-              val << $4
-            end
-          end
-          val
-        end
+    newvalue(:absent) do
+      provider.unset
+    end
+  
+    newvalue(:purged) do
+      provider.purge
+    end
+  end
+
+  newparam(:path) do
+    desc "The file or directory to which the ACL applies."
+    isnamevar
+    validate do |value|
+      path = Pathname.new(value)
+      unless path.absolute?
+        raise ArgumentError, "Path must be absolute: #{path}"
+      end
+    end
+  end
+
+  newproperty(:permission, :array_matching => :all) do 
+    desc "ACL permission(s)."
+
+    def is_to_s(value)
+      if value == :absent or value.include?(:absent)
+        super
+      else
+        value.join(",")
       end
     end
 
-end
+    def should_to_s(value)
+      if value == :absent or value.include?(:absent)
+        super
+      else
+        value.join(",")
+      end
+    end
 
+    # TODO munge into normalised form
+    validate do |acl|
+      unless acl =~ /^(d(efault)?:)?(((u(ser)?|g(roup)?):)?(([^:]+|((m(ask)?|o(ther)?):?))?|:?))(:[-rwxX]+|([0-7]{3,4}))$/
+        raise ArgumentError, "%s is not valid acl permission" % acl
+      end
+    end
+  end
+
+  newparam(:recursive) do
+    desc "Apply ACLs recursively."
+    newvalues(:true, :false)
+    defaultto false
+  end
+
+  autorequire(:file) do
+    self[:path]
+  end
+  
+  validate do
+    unless self[:permission]
+      raise(Puppet::Error, "permission is a required property.")
+    end
+  end
+
+end
