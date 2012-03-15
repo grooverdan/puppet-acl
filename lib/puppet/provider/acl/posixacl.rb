@@ -58,11 +58,7 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
   end
   
   def check_recursive
-    # if (@resource.value(:recursive) == :true)
-    #   value = '-R'
-    # else
-    #   value = ' '
-    # end
+    # Changed functionality to return boolean true or false
     value = (@resource.value(:recursive) == :true)
   end
 

@@ -84,17 +84,6 @@ Puppet::Type.newtype(:acl) do
     desc "Apply ACLs recursively."
     newvalues(:true, :false)
     defaultto :false
-
-    # try to fix bug where posixacl check_recursive method does
-    # boolean test against a string
-    # munge do |value|
-    #   if value == :true
-    #     true
-    #   else
-    #     false
-    #   end
-    # end
-
   end
 
   autorequire(:file) do
