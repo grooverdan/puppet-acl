@@ -15,18 +15,30 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
   
   def set
     @resource.value(:permission).each do |perm|
-      setfacl(check_recursive, '-m', perm, @resource.value(:path))
+      if check_recursive
+        setfacl('-R', '-m', perm, @resource.value(:path))
+      else
+        setfacl('-m', perm, @resource.value(:path))
+      end
     end
   end
 
   def unset
     @resource.value(:permission).each do |perm|
-      setfacl(check_recursive, '-x', perm, @resource.value(:path))
+      if check_recursive
+        setfacl('-R', '-x', perm, @resource.value(:path))
+      else
+        setfacl('-x', perm, @resource.value(:path))
+      end
     end
   end
 
   def purge
-    setfacl(check_recursive, '-b', @resource.value(:path))
+    if check_recursive
+      setfacl('-R', '-b', @resource.value(:path))
+    else
+      setfacl('-b', @resource.value(:path))
+    end
   end
 
   def permission
@@ -46,17 +58,22 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
   end
   
   def check_recursive
-    if @resource.value(:recursive)
-      value = '-R'
-    else
-      value = ''
-    end
+    # if (@resource.value(:recursive) == :true)
+    #   value = '-R'
+    # else
+    #   value = ' '
+    # end
+    value = (@resource.value(:recursive) == :true)
   end
 
   def permission=(value)
     purge
     value.each do |perm|
-      setfacl(check_recursive, '-m', perm, @resource.value(:path))
+      if check_recursive
+        setfacl('-R', '-m', perm, @resource.value(:path))
+      else
+        setfacl('-m', perm, @resource.value(:path))
+      end
     end
   end
 
