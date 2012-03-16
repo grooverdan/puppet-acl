@@ -17,9 +17,9 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
   def set
     @resource.value(:permission).each do |perm|
       if check_recursive
-        setfacl('-R', '-m', '-n', perm, @resource.value(:path))
+        setfacl('-R', '-n', '-m', perm, @resource.value(:path))
       else
-        setfacl('-m', '-n', perm, @resource.value(:path))
+        setfacl('-n', '-m', perm, @resource.value(:path))
       end
     end
   end
@@ -27,9 +27,9 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
   def unset
     @resource.value(:permission).each do |perm|
       if check_recursive
-        setfacl('-R', '-x', '-n', perm, @resource.value(:path))
+        setfacl('-R', '-n', '-x', perm, @resource.value(:path))
       else
-        setfacl('-x', '-n', perm, @resource.value(:path))
+        setfacl('-n', '-x', perm, @resource.value(:path))
       end
     end
   end
@@ -67,9 +67,9 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
     purge
     value.each do |perm|
       if check_recursive
-        setfacl('-R', '-m', '-n', perm, @resource.value(:path))
+        setfacl('-R', '-n', '-m', perm, @resource.value(:path))
       else
-        setfacl('-m', '-n', perm, @resource.value(:path))
+        setfacl('-n', '-m', perm, @resource.value(:path))
       end
     end
   end
