@@ -29,7 +29,7 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
       if check_recursive
         setfacl('-R', '-x', '-n', perm, @resource.value(:path))
       else
-        setfacl('-x', '-n' perm, @resource.value(:path))
+        setfacl('-x', '-n', perm, @resource.value(:path))
       end
     end
   end
