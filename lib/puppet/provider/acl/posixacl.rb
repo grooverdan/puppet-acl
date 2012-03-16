@@ -10,15 +10,16 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
   defaultfor :operatingsystem => [:debian, :ubuntu]
 
   def exists?
-    getfacl('-pE', @resource.value(:path))
+    # Use long options for getfacl to support RHEL5
+    getfacl('--absolute-names', '--no-effective', @resource.value(:path))
   end
   
   def set
     @resource.value(:permission).each do |perm|
       if check_recursive
-        setfacl('-R', '-m', perm, @resource.value(:path))
+        setfacl('-R', '-m', '-n', perm, @resource.value(:path))
       else
-        setfacl('-m', perm, @resource.value(:path))
+        setfacl('-m', '-n', perm, @resource.value(:path))
       end
     end
   end
@@ -26,9 +27,9 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
   def unset
     @resource.value(:permission).each do |perm|
       if check_recursive
-        setfacl('-R', '-x', perm, @resource.value(:path))
+        setfacl('-R', '-x', '-n', perm, @resource.value(:path))
       else
-        setfacl('-x', perm, @resource.value(:path))
+        setfacl('-x', '-n' perm, @resource.value(:path))
       end
     end
   end
@@ -44,7 +45,7 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
   def permission
     value = []
     #String#lines would be nice, but we need to support Ruby 1.8.5
-    getfacl('-pE', @resource.value(:path)).split("\n").each do |line|
+    getfacl('--absolute-names', '--no-effective', @resource.value(:path)).split("\n").each do |line|
       # Strip comments and blank lines
       if !(line =~ /^#/) and !(line == "")
         value << line
@@ -66,9 +67,9 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
     purge
     value.each do |perm|
       if check_recursive
-        setfacl('-R', '-m', perm, @resource.value(:path))
+        setfacl('-R', '-m', '-n', perm, @resource.value(:path))
       else
-        setfacl('-m', perm, @resource.value(:path))
+        setfacl('-m', '-n', perm, @resource.value(:path))
       end
     end
   end
