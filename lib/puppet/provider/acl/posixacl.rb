@@ -16,11 +16,11 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
   
   def set
     cur_perm = permission
-    puts "cur_perm: #{cur_perm}"
+    Puppet.debug "cur_perm: #{cur_perm}"
     @resource.value(:permission).each do |perm|
-      puts "permission: #{perm}"
+      Puppet.debug "permission: #{perm}"
       if !(cur_perm.include?(perm))
-        puts "!(cur_perm.include?(perm))"
+        Puppet.debug "!(cur_perm.include?(perm))"
         if check_recursive
           setfacl('-R', '-n', '-m', perm, @resource.value(:path))
         else
