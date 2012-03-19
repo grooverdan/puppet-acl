@@ -16,11 +16,11 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
   
   def set
     cur_perm = permission
-    Puppet.debug "cur_perm: #{cur_perm}"
+    Puppet.debug "cur_perm-1: #{cur_perm}"
     @resource.value(:permission).each do |perm|
-      Puppet.debug "permission: #{perm}"
+      Puppet.debug "permission-1: #{perm}"
       if !(cur_perm.include?(perm))
-        Puppet.debug "!(cur_perm.include?(perm))"
+        Puppet.debug "!(cur_perm.include?(perm))-1"
         if check_recursive
           setfacl('-R', '-n', '-m', perm, @resource.value(:path))
         else
@@ -70,12 +70,18 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
   end
 
   def permission=(value)
+    cur_perm = permission
+    Puppet.debug "cur_perm-2: #{cur_perm}"
     purge
     value.each do |perm|
-      if check_recursive
-        setfacl('-R', '-n', '-m', perm, @resource.value(:path))
-      else
-        setfacl('-n', '-m', perm, @resource.value(:path))
+      Puppet.debug "permission-2: #{perm}"
+      if !(cur_perm.include?(perm))
+        Puppet.debug "!(cur_perm.include?(perm))-2"
+        if check_recursive
+          setfacl('-R', '-n', '-m', perm, @resource.value(:path))
+        else
+          setfacl('-n', '-m', perm, @resource.value(:path))
+        end
       end
     end
   end
