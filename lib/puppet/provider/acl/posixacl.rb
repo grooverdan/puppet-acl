@@ -11,9 +11,11 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
 
   def exists?
     # Use long options for getfacl to support RHEL5
-    getfacl('--absolute-names', '--no-effective', @resource.value(:path))
+    # getfacl('--absolute-names', '--no-effective', @resource.value(:path))
+    permission
   end
   
+  # Either hack this to match permission= or delete it
   def set
     cur_perm = permission
     Puppet.debug "cur_perm-1: #{cur_perm}"
@@ -60,7 +62,7 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
     case value.length
       when 0 then nil
       when 1 then value[0]
-      else value
+      else value.sort
     end
   end
   
@@ -68,6 +70,12 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
     # Changed functionality to return boolean true or false
     value = (@resource.value(:recursive) == :true)
   end
+
+  def check_clobber
+    # Changed functionality to return boolean true or false
+    value = (@resource.value(:clobber) == :true)
+  end
+  
 
   def permission=(value)
     cur_perm = permission
@@ -81,16 +89,18 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
     end
     # Take supplied perms literally, unset any existing perms which
     # are absent from ACLs given
-    perm_to_unset.each do |perm|
-      # Skip base perms in unset step
-      if perm =~ /^(((u(ser)?)|(g(roup)?)|(m(ask)?)|(o(ther)?)):):/
-        Puppet.debug "skipping unset of base perm: #{perm}"
-      else
-        Puppet.debug "unsetting permission: #{perm}"
-        if check_recursive
-          setfacl('-R', '-n', '-x', perm, @resource.value(:path))
+    if check_clobber
+      perm_to_unset.each do |perm|
+        # Skip base perms in unset step
+        if perm =~ /^(((u(ser)?)|(g(roup)?)|(m(ask)?)|(o(ther)?)):):/
+          Puppet.debug "skipping unset of base perm: #{perm}"
         else
-          setfacl('-n', '-x', perm, @resource.value(:path))
+          Puppet.debug "unsetting permission: #{perm}"
+          if check_recursive
+            setfacl('-R', '-n', '-x', perm, @resource.value(:path))
+          else
+            setfacl('-n', '-x', perm, @resource.value(:path))
+          end
         end
       end
     end

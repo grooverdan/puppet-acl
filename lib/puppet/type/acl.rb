@@ -72,6 +72,10 @@ Puppet::Type.newtype(:acl) do
       end
     end
 
+    def retrieve
+      provider.permission
+    end
+
     # TODO munge into normalised form
     validate do |acl|
       unless acl =~ /^(d(efault)?:)?(((u(ser)?|g(roup)?):)?(([^:]+|((m(ask)?|o(ther)?):?))?|:?))(:[-rwxX]+|([0-7]{3,4}))$/
@@ -86,13 +90,20 @@ Puppet::Type.newtype(:acl) do
     defaultto :false
   end
 
+  newparam(:clobber) do
+    desc "Remove ACLs that aren't specified in the permission parameter."
+    newvalues(:true, :false)
+    defaultto :false
+  end
+
+
   autorequire(:file) do
     self[:path]
   end
 
-  def insync?(is)
-    (should == :defined and ((self[:permission] - provider.permission).length == 0))
-  end
+  # def insync?(is)
+  #   (should == :defined and ((self[:permission] - provider.permission).length == 0))
+  # end
   
   validate do
     unless self[:permission]
