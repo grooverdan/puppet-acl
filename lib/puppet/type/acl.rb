@@ -89,6 +89,10 @@ Puppet::Type.newtype(:acl) do
   autorequire(:file) do
     self[:path]
   end
+
+  def insync?(is)
+    (should == :defined and ((self[:permission] - provider.permission).length == 0))
+  end
   
   validate do
     unless self[:permission]

@@ -71,17 +71,35 @@ Puppet::Type.type(:acl).provide(:posixacl, :parent => Puppet::Provider::Acl) do
 
   def permission=(value)
     cur_perm = permission
-    Puppet.debug "cur_perm-2: #{cur_perm}"
-    purge
-    value.each do |perm|
-      Puppet.debug "permission-2: #{perm}"
-      if !(cur_perm.include?(perm))
-        Puppet.debug "!(cur_perm.include?(perm))-2"
+    Puppet.debug "cur_perm-2: #{cur_perm}, value: #{value}"
+    perm_to_set = @resource.value(:permission) - cur_perm
+    perm_to_unset = cur_perm - @resource.value(:permission)
+    Puppet.debug "perm_to_set: #{perm_to_set}"
+    Puppet.debug "perm_to_unset: #{perm_to_unset}"
+    if (perm_to_set.length == 0 && perm_to_unset.length == 0)
+      return false
+    end
+    # Take supplied perms literally, unset any existing perms which
+    # are absent from ACLs given
+    perm_to_unset.each do |perm|
+      # Skip base perms in unset step
+      if perm =~ /^(((u(ser)?)|(g(roup)?)|(m(ask)?)|(o(ther)?)):):/
+        Puppet.debug "skipping unset of base perm: #{perm}"
+      else
+        Puppet.debug "unsetting permission: #{perm}"
         if check_recursive
-          setfacl('-R', '-n', '-m', perm, @resource.value(:path))
+          setfacl('-R', '-n', '-x', perm, @resource.value(:path))
         else
-          setfacl('-n', '-m', perm, @resource.value(:path))
+          setfacl('-n', '-x', perm, @resource.value(:path))
         end
+      end
+    end
+    perm_to_set.each do |perm|
+      Puppet.debug "setting permission: #{perm}"
+      if check_recursive
+        setfacl('-R', '-n', '-m', perm, @resource.value(:path))
+      else
+        setfacl('-n', '-m', perm, @resource.value(:path))
       end
     end
   end
