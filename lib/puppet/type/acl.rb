@@ -135,11 +135,54 @@ Puppet::Type.newtype(:acl) do
       return set_insync(cur_perm)
     end
 
-    # TODO munge into normalised form
-    validate do |acl|
-      unless acl =~ /^(d(efault)?:)?(((u(ser)?|g(roup)?):)?(([^:]+|((m(ask)?|o(ther)?):?))?|:?))(:[-rwxX]+|([0-7]{3,4}))$/
-        raise ArgumentError, "%s is not valid acl permission" % acl
+    # Munge into normalised form
+    munge do |acl|
+      r = ''
+      a = acl.split ':', -1 # -1 keeps trailing empty fields.
+      if a.length < 3
+        raise ArgumentError, "Too few fields.  At least 3 required, got #{a.length}."
+      elsif a.length > 4
+        raise ArgumentError, "Too many fields.  At most 4 allowed, got #{a.length}."
       end
+      if a.length == 4
+        d = a.shift
+        if d == 'd' || d == 'default'
+          r << 'default:'
+        else
+          raise ArgumentError, %(First field of 4 must be "d" or "default", got "#{d}".)
+        end
+      end
+      t = a.shift # Copy the type.
+      r << case t
+      when 'u', 'user'
+        'user:'
+      when 'g', 'group'
+        'group:'
+      when 'o', 'other'
+        'other:'
+      when 'm', 'mask'
+        'mask:'
+      else
+        raise ArgumentError, %(Unknown type "#{t}", expected "user", "group", "other" or "mask".)
+      end
+      r << "#{a.shift}:" # Copy the "who".
+      p = a.shift
+      if p =~ /[0-7]/
+        p = p.oct
+        r << ( p | 4 ? 'r':'-')
+        r << ( p | 2 ? 'w':'-')
+        r << ( p | 1 ? 'x':'-')
+      else
+        # Not the most efficient but checks for multiple and invalid chars.
+        s = p.tr '-', ''
+        r << (s.sub!('r', '')?'r':'-')
+        r << (s.sub!('w', '')?'w':'-')
+        r << (s.sub!('x', '')?'x':'-')
+        if !s.empty?
+          raise ArgumentError, %(Invalid permission set "#{p}".)
+        end
+      end
+      r
     end
   end
 
