@@ -100,6 +100,10 @@ Puppet::Type.newtype(:acl) do
       value.sort
     end
 
+    # in unset_insync and set_insync the test_should has been added as a work around
+    #  to prevent puppet-acl from interpreting recursive permission notation (e.g. rwX)
+    #  from causing a false mismatch.  A better solution needs to be implemented to
+    #  recursively check permissions, not rely upon getfacl
     def unset_insync(cur_perm)
       # Puppet.debug "permission.unset_insync"
       test_should = []
