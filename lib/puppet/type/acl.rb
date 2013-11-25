@@ -27,7 +27,7 @@ Puppet::Type.newtype(:acl) do
       permissions are set recursively on /var/www/html as well as add
       default permissions that will apply to new directories and files
       created under /var/www/html
-  
+
       Setting an ACL can change a file's mode bits, so if the file is
       managed by a File resource, that resource needs to set the mode
       bits according to what the calculated mode bits will be, for
@@ -61,7 +61,7 @@ Puppet::Type.newtype(:acl) do
     end
   end
 
-  newproperty(:permission, :array_matching => :all) do 
+  newproperty(:permission, :array_matching => :all) do
     desc "ACL permission(s)."
 
     def is_to_s(value)
@@ -102,14 +102,18 @@ Puppet::Type.newtype(:acl) do
 
     def unset_insync(cur_perm)
       # Puppet.debug "permission.unset_insync"
+      test_should = []
+      @should.each { |x| test_should << x.downcase() }
       cp = strip_perms(cur_perm)
-      sp = strip_perms(@should)
+      sp = strip_perms(test_should)
       (sp - cp).sort == sp
     end
 
     def set_insync(cur_perm)
       # Puppet.debug "permission.set_insync"
-      (cur_perm.sort == @should.sort) or (provider.check_set and ((@should - cur_perm).length == 0))
+      test_should = []
+      @should.each { |x| test_should << x.downcase() }
+      (cur_perm.sort == test_should.sort) or (provider.check_set and ((test_should - cur_perm).length == 0))
     end
 
     def purge_insync(cur_perm)
