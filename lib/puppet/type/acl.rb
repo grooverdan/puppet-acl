@@ -115,8 +115,7 @@ Puppet::Type.newtype(:acl) do
 
     def set_insync(cur_perm)
       # Puppet.debug "permission.set_insync"
-      test_should = []
-      @should.each { |x| test_should << x.downcase() }
+      test_should = @should.map { |x| x.downcase() }.uniq
       (cur_perm.sort == test_should.sort) or (provider.check_set and ((test_should - cur_perm).length == 0))
     end
 
